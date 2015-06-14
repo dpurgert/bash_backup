@@ -77,6 +77,7 @@ checkDestnations()
 
 checkPerms()
 {
+	IFS=$'\n'
 	items+=($(find "${source}" -type f))
 	items+=($(find "${source}" -type d)) 
 	for x in "${items[@]}" ; do
