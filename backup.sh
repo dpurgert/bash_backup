@@ -19,7 +19,7 @@ source="$(echo $1 | sed -e 's/\/$//')"
 destRootPath="$HOME/Backups"
 destPath="${destRootPath}/$(hostname -s)"
 dateStamp=$(date +%Y_%m_%d)
-tgtName="backup.${dateStamp}.${source}.tar.gz"
+tgtName="backup_${dateStamp}_${source}.tar.gz"
 
 if (($# != 1)) ; then
 	echo " Usage: ${0##*/} {target}"
@@ -65,5 +65,36 @@ checkDestnations()
 	fi
 }
 
+checkPerms()
+{
+	items+=($(find "${source}" -type f))
+	items+=($(find "${source}" -type d)) 
+	for x in "${items[@]}" ; do
+		test -r "$x"
+		if (($? != 0)) ; then
+			echo "$x is non-readable"
+			exit 1
+		else
+			test -w "$x"
+			if (($? != 0)) ; then
+				echo "$x is non-writable"
+				exit 1
+			fi
+		fi
+	done
+}
+
+checkSource()
+{
+	if [[ ! -d "${source}" ]] || [[ ! -f "${source}" ]] ; then
+		echo " Backup source: ${source} does not exist..."
+		exit 1
+	else
+		return 0
+	fi
+}
+
+checkSource
+checkPerms
 checkDestnations
 backupTarget
