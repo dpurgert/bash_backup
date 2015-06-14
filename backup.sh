@@ -37,6 +37,16 @@ backupTarget()
 	echo " Backup Finished: ${tgtName} --Size: ${size}"
 }
 
+checkStorage()
+{
+	tgtFolder=$(du -cs "${source}" | tail -n1 | awk '{print $1}')
+	tgtPath=$(du -cs "${destPath}" | tail -n1 | awk '{print $1}')
+	if (((tgtFolder * 3) > tgtPath)) ; then
+		echo "storage is low --abort"
+		exit 1
+	fi
+}
+
 checkDestnations()
 {
 	if [[ -d "${destRootPath}" ]]
@@ -100,4 +110,5 @@ checkSource()
 checkSource
 checkPerms
 checkDestnations
+checkStorage
 backupTarget
