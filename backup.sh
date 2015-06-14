@@ -85,12 +85,6 @@ checkPerms()
 		if (($? != 0)) ; then
 			echo "$x is non-readable"
 			exit 1
-		else
-			test -w "$x"
-			if (($? != 0)) ; then
-				echo "$x is non-writable"
-				exit 1
-			fi
 		fi
 	done
 }
