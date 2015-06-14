@@ -39,8 +39,8 @@ backupTarget()
 
 checkStorage()
 {
-	tgtFolder=$(du -cs "${source}" | tail -n1 | awk '{print $1}')
-	tgtPath=$(du -cs "${destPath}" | tail -n1 | awk '{print $1}')
+	tgtFolder=$(du -csk "${source}" 2> /dev/null | tail -n1 | awk '{print $1}')
+	tgtPath=$(df -k "${destPath}" 2> /dev/null | tail -n1 | awk '{print $4}')
 	if (((tgtFolder * 3) > tgtPath)) ; then
 		echo "storage is low --abort"
 		exit 1
