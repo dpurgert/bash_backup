@@ -4,9 +4,9 @@
 #
 #           script: backup.sh
 #       written by: marek novotny
-#          version: 2.0
-#             date: Tue Jan 20 11:50:19 PST 2015
-#          purpose: Create a tar backup of a directory
+#          version: 3.0
+#             date: Sat Jun 13 17:28:00 PST 2015
+#          purpose: Create a tar backup of a target
 #                 : and store it in a date-stamped file
 #                 : in a specific backup location
 #
@@ -15,80 +15,55 @@
 #
 #############################################################
 
-# record the argument as the desired backup source directory name
+source="$(echo $1 | sed -e 's/\/$//')"
+destRootPath="$HOME/Backups"
+destPath="${destRootPath}/$(hostname -s)"
+dateStamp=$(date +%Y_%m_%d)
+tgtName="backup.${dateStamp}.${source}.tar.gz"
 
-source=$(echo $1 | sed -e 's/\/$//')
-
-usageError()
-{
-	cat << EOF
-
-	Usage Error!!
-
-	Type: ${0##*/} {directory name}
-
-	Execute the script with the directory name you wish to backup
-	as the sole argument. 
-
-EOF
-}
-
-# Make sure a single argument is used with the command or present usage
-
-if (($# != 1))
-then
-	usageError
-	exit
+if (($# != 1)) ; then
+	echo " Usage: ${0##*/} {target}"
+	exit 1
 fi
-
-pathNotFound()
-{
-	cat << EOF
-
-	Path not Found!!
-
-	Search for ${source} found no match... 
-	Please try again...
-
-EOF
-}
-
-# find the source directory at maxdepth -1 from working directory and set that as
-# the backup target path
-
-findPath()
-{
-	targetSource=$(find "${PWD}" -maxdepth 1 -type d -name "${source}" | sed -e 's/\/$//')
-	if [ ! -d "${targetSource}" ]
-	then
-		pathNotFound
-		exit
-	fi
-}
-
-# setup the target tar file name with date stamp and backup target to backup facility
 
 backupTarget()
 {
-	dateStamp=$(date +%Y_%m_%d)
-	targetName="backup.${dateStamp}.${source##*/}.tar.gz"
-
-	# setup your storage path here. 
-
-	storagePath="$HOME/Backups/$(hostname --short)"
-	if [ ! -d "${storagePath}" ]
-	then
-		mkdir -p "${storagePath}"
-	fi
-
-	printf "\nBackup started: %s...\n\n" "${targetSource}"
-	tar cpzf "${storagePath}/${targetName}" "${targetSource}"
+	echo " Backup: ${source} has started..."
+	tar -cpzf "${destPath}/${tgtName}" "${source}"
 
 	sleep 5 # give NAS enough time to record the storage size
-	size=$(du -hs "${storagePath}/${targetName}" | awk '{print $1}')
+	size=$(du -hs "${destPath}/${tgtName}" | awk '{print $1}')
 
-	printf "\n  Backup Finished: %s --Size: %s\n\n" "${targetName}" "${size}"
+	echo " Backup Finished: ${tgtName} --Size: ${size}"
 }
 
-findPath
+checkDestnations()
+{
+	if [[ -d "${destRootPath}" ]]
+	then
+		if [[ -r "${destRootPath}" ]] && [[ -w "${destRootPath}" ]]
+		then
+			if [[ -d "${destPath}" ]]
+			then
+				if [[ -r "${destPath}" ]] && [[ -w "${destPath}" ]]
+				then
+					return 0
+				else
+					echo " Folder: ${destPath} is not readable or writable..."
+					exit 1
+				fi
+			else
+				mkdir -p "${destPath}"
+			fi
+		else
+			echo " Folder: ${destRootPath} is not readable or writable..."
+			exit 1
+		fi
+	else
+		echo " Folder: ${destRootPath} does not exist..."
+		exit 1
+	fi
+}
+
+checkDestnations
 backupTarget
