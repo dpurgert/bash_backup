@@ -40,6 +40,9 @@ restore()
 					echo " Stage 4: ${originalPath} restored..."
 					exit 0
 				fi
+			else
+				mv "${originalPath}.bak" "${originalPath}"
+				exit 1
 			fi
 		fi
 	else
