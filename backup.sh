@@ -29,12 +29,16 @@ fi
 backupTarget()
 {
 	echo " Backup: ${source} has started..."
-	tar -cpzf "${destPath}/${tgtName}" "${source}"
-
-	sleep 5 # give NAS enough time to record the storage size
-	size=$(du -hs "${destPath}/${tgtName}" | awk '{print $1}')
-
-	echo " Backup Finished: ${tgtName} --Size: ${size}"
+	tar -cpzf "${destPath}/${tgtName}" "${source}" 2> /dev/null
+	if (($? == 0))
+	then
+		sleep 5 # give NAS enough time to record the storage size
+		size=$(du -hs "${destPath}/${tgtName}" | awk '{print $1}')
+		echo " Backup Finished: ${tgtName} --Size: ${size}"
+	else
+		echo " Backup could not be written..."
+		exit 1
+	fi
 }
 
 checkStorage()
@@ -43,6 +47,12 @@ checkStorage()
 	tgtPath=$(df -k "${destPath}" 2> /dev/null | tail -n1 | awk '{print $4}')
 	if (((tgtFolder * 3) > tgtPath)) ; then
 		echo "storage is low --abort"
+		exit 1
+	fi
+
+	if [[ -f "${destPath}/${tgtName}" ]] && [[ ! -w "${destPath}/${tgtName}" ]]
+	then
+		echo " Backup: File exists and cannot be overwritten..."
 		exit 1
 	fi
 }
