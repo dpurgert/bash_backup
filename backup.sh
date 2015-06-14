@@ -86,7 +86,10 @@ checkPerms()
 
 checkSource()
 {
-	if [[ ! -d "${source}" ]] || [[ ! -f "${source}" ]] ; then
+	if [[ -f "${source}" ]] ; then
+		echo " Backup source: ${source} is a file, not a directory..."
+		exit 1
+	elif [[ ! -d "${source}" ]] ; then
 		echo " Backup source: ${source} does not exist..."
 		exit 1
 	else
