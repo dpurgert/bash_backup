@@ -3,31 +3,121 @@
 #############################################################
 #
 #           script: backup.sh
-#       written by: marek novotny
-#          version: 3.0
-#             date: Sat Jun 13 17:28:00 PST 2015
-#          purpose: Create a tar backup of a target
+#       adapted by: dan purgert
+#      original by: marek novotny
+#          version: 0.1
+#             date: Tue Aug 11 14:15:00 EDT 2015
+#          purpose: Create a backup of a target
 #                 : and store it in a date-stamped file
 #                 : in a specific backup location
 #
 #          licence: GPL v2 (only)
-#       repository: http://www.github.com/marek-novotny
+#       repository: http://www.github.com/dpurgert
+# (Marek's source): http://www.github.com/marek-novotny
 #
 #############################################################
 
-source="$(echo $1 | sed -e 's/\/$//')"
-destRootPath="$HOME/Backups"
-destPath="${destRootPath}/$(hostname -s)"
-dateStamp=$(date +%Y_%m_%d)
-tgtName="backup_${dateStamp}_${source}.tar.gz"
+if [ $# -eq 0 ] || [ $1 = "-h" ]; then
+  echo "backup.sh"
+  echo "---------"
+  echo "Create a backup of a target and store it in a"
+  echo "date-stamped file in a specific backup location"
+  echo ""
+  echo "Options:"
+  echo " -h    Print this help text and exit"
+  echo ""
+  echo "Usage:"
+  echo "backup.sh <config_file>"
+  echo ""
+  echo ""
+  echo "Config File Parameters"
+  echo "hostname -- your computer's hostname.  Usage 'hostname=<host>'"
+  echo "dstRoot -- Destination root folder, full path is required."
+  echo "    Usage 'dstRoot=</path/to/destination>'"
+  echo "srcPath -- Source directory, full path is required. You can"
+  echo "  use as many 'srcPath' entries as you wish, one per line."
+  echo "    Usage 'srcPath=</path/to/source>'"
+  echo ""
+  echo "Note - dstRoot and srcPath currently require full paths, as"
+  echo "the script treats them as strings."
+  echo "---------"
 
-if (($# != 1)) ; then
-	echo " Usage: ${0##*/} {target}"
-	exit 1
+  if [ $# -eq 0 ];then 
+    exit 1
+  else
+    exit 0
+  fi
+fi
+
+if [ ! -f $1 ]; then
+  echo "You must provide a configuration file."
+  exit 1
+fi
+
+DEBUG=0
+
+#source="$(echo $1 | sed -e 's/\/$//')"
+#destRootPath="$HOME/Backups"
+#destPath="${destRootPath}/$(hostname -s)"
+#dateStamp=$(date +%Y_%m_%d)
+#tgtName="backup_${dateStamp}_${source}.tar.gz"
+
+# Cleanup before setting new values from the config file
+unset host
+unset dstRoot
+unset sourceArr
+
+while IFS='' read -r line || [[ -n "$line" ]]; do 
+    lineParam=$(echo $line | cut -d= -f1)
+    paramVal=$(echo $line | cut -d= -f2)
+    if [ $DEBUG -eq 1 ]; then    
+      echo "read: $line"
+      echo "${lineParam}"
+      echo "......"
+      echo "${paramVal}"
+    fi
+    
+    if [ $lineParam = "hostname" ]; then
+        host=$paramVal
+    elif [ $lineParam = "dstRoot" ]; then
+        dstRoot=$paramVal
+    elif [ $lineParam = "srcPath" ]; then
+        sourceArr=("${sourceArr[@]}" $(echo $paramVal| sed -e\
+     's/\/$//'))
+    fi
+done < $1
+
+dstPath="${dstRoot}/$host"
+
+if [ $DEBUG -eq 1 ]; then
+ echo "This host is $host"
+ echo "Backup destination root is $dstRoot"
+ echo "Backup path is $dstPath"
+ echo "sources for backup are ${sourceArr[@]}"
+ echo ""
+fi
+
+if [ -z "$host" ]; then
+  echo "Missing Host entry from config file."
+  exit 1
+fi
+
+if [ -z "$dstRoot" ]; then 
+  echo "Missing destination root directory in config file."
+  exit 1
+fi
+
+if [ -z "${sourceArr[0]}" ]; then
+  echo "Missing backup source in config file."
+  exit 1
 fi
 
 backupTarget()
 {
+source=$1
+destpath=$2
+tgtName=$3
+
 	echo " Backup: ${source} has started..."
 	tar -cpzf "${destPath}/${tgtName}" "${source}" 2> /dev/null
 	if (($? == 0))
@@ -43,6 +133,10 @@ backupTarget()
 
 checkStorage()
 {
+source=$1
+destPath=$2
+tgtName=$3
+
 	tgtFolder=$(du -csk "${source}" 2> /dev/null | tail -n1 | awk '{print $1}')
 	tgtPath=$(df -k "${destPath}" 2> /dev/null | tail -n1 | awk '{print $4}')
 	if (((tgtFolder * 3) > tgtPath)) ; then
@@ -59,6 +153,9 @@ checkStorage()
 
 checkDestnations()
 {
+destRootPath=$1
+destPath=$2
+
 	if [[ -d "${destRootPath}" ]]
 	then
 		if [[ -r "${destRootPath}" ]] && [[ -w "${destRootPath}" ]]
@@ -87,6 +184,7 @@ checkDestnations()
 
 checkPerms()
 {
+source=$1
 	IFS=$'\n'
 	items+=($(find "${source}" -type f))
 	items+=($(find "${source}" -type d)) 
@@ -101,6 +199,7 @@ checkPerms()
 
 checkSource()
 {
+source=$1
 	if [[ -f "${source}" ]] ; then
 		echo " Backup source: ${source} is a file, not a directory..."
 		exit 1
@@ -112,8 +211,33 @@ checkSource()
 	fi
 }
 
-checkSource
-checkPerms
-checkDestnations
-checkStorage
-backupTarget
+
+if [ $DEBUG -eq 1 ]; then
+  for src in ${sourceArr[@]}; do
+  {
+    dateStamp=$(date +%Y_%m_%d)
+    dstTarget="backup_${dateStamp}_${src}.tar.gz"
+    echo "checkSource $src"
+    echo "checkPerms $src"
+    echo "checkDestnations $dstRoot $dstPath"
+    echo "checkStorage $src $dstPath $dstTarget"
+    echo "backupTarget $src $dstPath $dstTarget"
+  }
+  done
+  echo "Debug mode only. Exiting without creating backup."
+  exit 0
+else
+  for src in ${sourceArr[@]}; do
+  {
+    dateStamp=$(date +%Y_%m_%d)
+    dstTarget="backup.${dateStamp}.$(echo $src | sed -e 's/\///'\
+      | sed -e 's/\//_/g').tar.gz"
+    checkSource ${src}
+    checkPerms ${src}
+    checkDestnations ${dstRoot} ${dstPath}
+    checkStorage ${src} ${dstPath} ${dstTarget}
+    echo "backupTarget $src $dstPath $dstTarget"
+    backupTarget ${src} ${dstPath} ${dstTarget}
+  }
+  done
+fi

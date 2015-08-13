@@ -1,0 +1,3 @@
+hostname=example
+dstRoot=/home/User/Backups
+srcPath=/home/User/Documents

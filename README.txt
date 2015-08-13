@@ -1,27 +1,28 @@
 backup.sh
 =========
 
-The purpose of this simple bash shell script it to allow a simple
-backup of any one specified directory in your current working
-directory. 
+The purpose of this simple bash shell script it to allow a simple backup
+of one or more directories specified in the configuration file.
+
+This is a fork of Marek Novotny's "bash_backup" script, which can be
+found at http://github.com/marek-novotny.
 
 Example:
 ========
 
-$ backup.sh scripts
+$ backup.sh config_file.txt
 
-If I have a directory called scripts in my immediate working directory
-it will be found, its full path recorded, and a tar.gz will be created
-and stored in a specified backup repository. 
+The script will read the configuration values in from the file (see
+"Setup" section below), and proceed to create individual .tar.gz files
+from the individual source paths provided in the configuration file.
 
 The full backup file name will look like this:
 
-backup.2015_01_20.scripts.tar.gz
+backup.2015_01_20.path_to_source.tar.gz
 
-In my case it will be stored in $HOME/Backups/{machine name} because
-my Backups directory is an NFS share and my other machines also 
-backup to this same location. Each machine gets it's own directory
-under the common NFS Backups storage facility. 
+In the example case, the backup will be stored /mnt/NFS_Backups/<host>,
+as the assumption is that this can be used for multiple hosts all
+backing up to a single location.  
 
 tar examples
 ============
@@ -45,7 +46,15 @@ So it excludes home/marek/Documents and leaves fluke/LRAT2000.PDF
 SETUP
 =====
 
-Search for the variable 'storagePath' and setup your own storage
-location. 
+Create a configuration file with the following parameters:
 
--Marek
+  - hostname=<hostname>
+  - dstRoot=</path/to/destination>
+  - srcPath=</path/to/source
+
+Note that the "hostname" and "dstRoot" can be used at most once in the
+configuration file.  Any additional uses of these two keywords will
+simply overwrite previous entries once the file is read in by the
+script.
+
+-Dan
