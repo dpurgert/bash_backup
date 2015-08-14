@@ -18,29 +18,31 @@
 #############################################################
 
 if [ $# -eq 0 ] || [ $1 = "-h" ]; then
-  echo "backup.sh"
-  echo "---------"
-  echo "Create a backup of a target and store it in a"
-  echo "date-stamped file in a specific backup location"
-  echo ""
-  echo "Options:"
-  echo " -h    Print this help text and exit"
-  echo ""
-  echo "Usage:"
-  echo "backup.sh <config_file>"
-  echo ""
-  echo ""
-  echo "Config File Parameters"
-  echo "hostname -- your computer's hostname.  Usage 'hostname=<host>'"
-  echo "dstRoot -- Destination root folder, full path is required."
-  echo "    Usage 'dstRoot=</path/to/destination>'"
-  echo "srcPath -- Source directory, full path is required. You can"
-  echo "  use as many 'srcPath' entries as you wish, one per line."
-  echo "    Usage 'srcPath=</path/to/source>'"
-  echo ""
-  echo "Note - dstRoot and srcPath currently require full paths, as"
-  echo "the script treats them as strings."
-  echo "---------"
+  echo "  
+  backup.sh
+  ---------
+  Create a backup of a target and store it in a
+  date-stamped file in a specific backup location
+  
+  Options:
+   -h    Print this help text and exit
+  
+  Usage:
+  backup.sh <config_file>
+  
+  
+  Config File Parameters
+    hostname -- your computer's hostname.  Usage 'hostname=<host>'
+    dstRoot -- Destination root folder, full path is required.
+      Usage 'dstRoot=</path/to/destination>'
+    srcPath -- Source directory, full path is required. You can
+    use as many 'srcPath' entries as you wish, one per line.
+      Usage 'srcPath=</path/to/source>'
+  
+  Note - dstRoot and srcPath currently require full paths, as
+  the script treats them as strings.
+  ---------
+"
 
   if [ $# -eq 0 ];then 
     exit 1
@@ -71,10 +73,12 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
     lineParam=$(echo $line | cut -d= -f1)
     paramVal=$(echo $line | cut -d= -f2)
     if [ $DEBUG -eq 1 ]; then    
-      echo "read: $line"
-      echo "${lineParam}"
-      echo "......"
-      echo "${paramVal}"
+      echo "
+      read: $line
+      ${lineParam}
+      ......
+      ${paramVal}
+      "
     fi
     
     if [ $lineParam = "hostname" ]; then
@@ -90,11 +94,12 @@ done < $1
 dstPath="${dstRoot}/$host"
 
 if [ $DEBUG -eq 1 ]; then
- echo "This host is $host"
- echo "Backup destination root is $dstRoot"
- echo "Backup path is $dstPath"
- echo "sources for backup are ${sourceArr[@]}"
- echo ""
+ echo "
+ This host is $host
+ Backup destination root is $dstRoot
+ Backup path is $dstPath
+ sources for backup are ${sourceArr[@]}
+ "
 fi
 
 if [ -z "$host" ]; then
@@ -217,11 +222,12 @@ if [ $DEBUG -eq 1 ]; then
   {
     dateStamp=$(date +%Y_%m_%d)
     dstTarget="backup_${dateStamp}_${src}.tar.gz"
-    echo "checkSource $src"
-    echo "checkPerms $src"
-    echo "checkDestnations $dstRoot $dstPath"
-    echo "checkStorage $src $dstPath $dstTarget"
-    echo "backupTarget $src $dstPath $dstTarget"
+    echo "
+    checkSource $src
+    checkPerms $src
+    checkDestnations $dstRoot $dstPath
+    checkStorage $src $dstPath $dstTarget
+    backupTarget $src $dstPath $dstTarget"
   }
   done
   echo "Debug mode only. Exiting without creating backup."
@@ -236,7 +242,6 @@ else
     checkPerms ${src}
     checkDestnations ${dstRoot} ${dstPath}
     checkStorage ${src} ${dstPath} ${dstTarget}
-    echo "backupTarget $src $dstPath $dstTarget"
     backupTarget ${src} ${dstPath} ${dstTarget}
   }
   done
